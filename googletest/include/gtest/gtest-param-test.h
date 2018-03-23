@@ -1371,6 +1371,8 @@ internal::CartesianProductHolder10<Generator1, Generator2, Generator3,
 }
 # endif  // GTEST_HAS_COMBINE
 
+
+
 # define TEST_P(test_case_name, test_name) \
   class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) \
       : public test_case_name { \
@@ -1384,8 +1386,8 @@ internal::CartesianProductHolder10<Generator1, Generator2, Generator3,
               #test_case_name, \
               ::testing::internal::CodeLocation(\
                   __FILE__, __LINE__))->AddTestPattern(\
-                      GTEST_STRINGIFY_(test_case_name), \
-                      GTEST_STRINGIFY_(test_name), \
+                      #test_case_name, \
+                      #test_name, \
                       new ::testing::internal::TestMetaFactory< \
                           GTEST_TEST_CLASS_NAME_(\
                               test_case_name, test_name)>()); \

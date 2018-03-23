@@ -136,8 +136,8 @@ static bool ParseGoogleMockIntFlag(const char* str, const char* flag,
   if (value_str == NULL) return false;
 
   // Sets *value to the value of the flag.
-  return ParseInt32(Message() << "The value of flag --" << flag,
-                    value_str, value);
+  *value = atoi(value_str);
+  return true;
 }
 
 // The internal implementation of InitGoogleMock().

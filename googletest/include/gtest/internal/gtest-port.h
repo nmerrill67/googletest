@@ -107,12 +107,6 @@
 //   GTEST_CREATE_SHARED_LIBRARY
 //                            - Define to 1 when compiling Google Test itself
 //                              as a shared library.
-//   GTEST_DEFAULT_DEATH_TEST_STYLE
-//                            - The default value of --gtest_death_test_style.
-//                              The legacy default has been "fast" in the open
-//                              source version since 2008. The recommended value
-//                              is "threadsafe", and can be set in
-//                              custom/gtest-port.h.
 
 // Platform-indicating macros
 // --------------------------
@@ -363,14 +357,14 @@
 #if GTEST_STDLIB_CXX11
 # define GTEST_HAS_STD_BEGIN_AND_END_ 1
 # define GTEST_HAS_STD_FORWARD_LIST_ 1
-# if !defined(_MSC_VER) || (_MSC_FULL_VER >= 190023824)
-// works only with VS2015U2 and better
+# if !defined(_MSC_VER) || (_MSC_FULL_VER >= 190023824) // works only with VS2015U2 and better
 #   define GTEST_HAS_STD_FUNCTION_ 1
 # endif
 # define GTEST_HAS_STD_INITIALIZER_LIST_ 1
 # define GTEST_HAS_STD_MOVE_ 1
-# define GTEST_HAS_STD_UNIQUE_PTR_ 1
 # define GTEST_HAS_STD_SHARED_PTR_ 1
+# define GTEST_HAS_STD_TYPE_TRAITS_ 1
+# define GTEST_HAS_STD_UNIQUE_PTR_ 1
 # define GTEST_HAS_UNORDERED_MAP_ 1
 # define GTEST_HAS_UNORDERED_SET_ 1
 #endif
@@ -471,11 +465,8 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #ifndef GTEST_HAS_EXCEPTIONS
 // The user didn't tell us whether exceptions are enabled, so we need
 // to figure it out.
-# if defined(_MSC_VER) && defined(_CPPUNWIND)
-// MSVC defines _CPPUNWIND to 1 iff exceptions are enabled.
-#  define GTEST_HAS_EXCEPTIONS 1
-# elif defined(__BORLANDC__)
-// C++Builder's implementation of the STL uses the _HAS_EXCEPTIONS
+# if defined(_MSC_VER) || defined(__BORLANDC__)
+// MSVC's and C++Builder's implementations of the STL use the _HAS_EXCEPTIONS
 // macro to enable exceptions, so we'll do the same.
 // Assumes that exceptions are enabled by default.
 #  ifndef _HAS_EXCEPTIONS
@@ -519,7 +510,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 # define GTEST_HAS_STD_STRING 1
 #elif !GTEST_HAS_STD_STRING
 // The user told us that ::std::string isn't available.
-# error "::std::string isn't available."
+# error "Google Test cannot be used where ::std::string isn't available."
 #endif  // !defined(GTEST_HAS_STD_STRING)
 
 #ifndef GTEST_HAS_GLOBAL_STRING
@@ -889,12 +880,6 @@ using ::std::tuple_size;
 # define GTEST_ATTRIBUTE_UNUSED_
 #endif
 
-#if GTEST_LANG_CXX11
-# define GTEST_CXX11_EQUALS_DELETE_ = delete
-#else  // GTEST_LANG_CXX11
-# define GTEST_CXX11_EQUALS_DELETE_
-#endif  // GTEST_LANG_CXX11
-
 // Use this annotation before a function that takes a printf format string.
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(COMPILER_ICC)
 # if defined(__MINGW_PRINTF_FORMAT)
@@ -912,16 +897,15 @@ using ::std::tuple_size;
 # define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check)
 #endif
 
-
 // A macro to disallow operator=
 // This should be used in the private: declarations for a class.
-#define GTEST_DISALLOW_ASSIGN_(type) \
-  void operator=(type const &) GTEST_CXX11_EQUALS_DELETE_
+#define GTEST_DISALLOW_ASSIGN_(type)\
+  void operator=(type const &)
 
 // A macro to disallow copy constructor and operator=
 // This should be used in the private: declarations for a class.
-#define GTEST_DISALLOW_COPY_AND_ASSIGN_(type) \
-  type(type const &) GTEST_CXX11_EQUALS_DELETE_; \
+#define GTEST_DISALLOW_COPY_AND_ASSIGN_(type)\
+  type(type const &);\
   GTEST_DISALLOW_ASSIGN_(type)
 
 // Tell the compiler to warn about unused return values for functions declared
@@ -982,17 +966,13 @@ using ::std::tuple_size;
 # endif
 #elif __GNUC__ >= 4 || defined(__clang__)
 # define GTEST_API_ __attribute__((visibility ("default")))
-#endif  // _MSC_VER
+#endif // _MSC_VER
 
-#endif  // GTEST_API_
+#endif // GTEST_API_
 
 #ifndef GTEST_API_
 # define GTEST_API_
-#endif  // GTEST_API_
-
-#ifndef GTEST_DEFAULT_DEATH_TEST_STYLE
-# define GTEST_DEFAULT_DEATH_TEST_STYLE  "fast"
-#endif  // GTEST_DEFAULT_DEATH_TEST_STYLE
+#endif // GTEST_API_
 
 #ifdef __GNUC__
 // Ask the compiler to never inline a given function.
@@ -1002,12 +982,10 @@ using ::std::tuple_size;
 #endif
 
 // _LIBCPP_VERSION is defined by the libc++ library from the LLVM project.
-#if !defined(GTEST_HAS_CXXABI_H_)
-# if defined(__GLIBCXX__) || (defined(_LIBCPP_VERSION) && !defined(_MSC_VER))
-#  define GTEST_HAS_CXXABI_H_ 1
-# else
-#  define GTEST_HAS_CXXABI_H_ 0
-# endif
+#if defined(__GLIBCXX__) || (defined(_LIBCPP_VERSION) && !defined(_MSC_VER))
+# define GTEST_HAS_CXXABI_H_ 1
+#else
+# define GTEST_HAS_CXXABI_H_ 0
 #endif
 
 // A function level attribute to disable checking for use of uninitialized
@@ -1546,18 +1524,14 @@ GTEST_API_ size_t GetFileSize(FILE* file);
 GTEST_API_ std::string ReadEntireFile(FILE* file);
 
 // All command line arguments.
-GTEST_API_ std::vector<std::string> GetArgvs();
+GTEST_API_ const ::std::vector<testing::internal::string>& GetArgvs();
 
 #if GTEST_HAS_DEATH_TEST
 
-std::vector<std::string> GetInjectableArgvs();
-// Deprecated: pass the args vector by value instead.
-void SetInjectableArgvs(const std::vector<std::string>* new_argvs);
-void SetInjectableArgvs(const std::vector<std::string>& new_argvs);
-#if GTEST_HAS_GLOBAL_STRING
-void SetInjectableArgvs(const std::vector< ::string>& new_argvs);
-#endif  // GTEST_HAS_GLOBAL_STRING
-void ClearInjectableArgvs();
+const ::std::vector<testing::internal::string>& GetInjectableArgvs();
+void SetInjectableArgvs(const ::std::vector<testing::internal::string>*
+                             new_argvs);
+
 
 #endif  // GTEST_HAS_DEATH_TEST
 
@@ -2644,15 +2618,15 @@ typedef TypeWithSize<8>::Int TimeInMillis;  // Represents time in milliseconds.
 # define GTEST_DECLARE_bool_(name) GTEST_API_ extern bool GTEST_FLAG(name)
 # define GTEST_DECLARE_int32_(name) \
     GTEST_API_ extern ::testing::internal::Int32 GTEST_FLAG(name)
-# define GTEST_DECLARE_string_(name) \
+#define GTEST_DECLARE_string_(name) \
     GTEST_API_ extern ::std::string GTEST_FLAG(name)
 
 // Macros for defining flags.
-# define GTEST_DEFINE_bool_(name, default_val, doc) \
+#define GTEST_DEFINE_bool_(name, default_val, doc) \
     GTEST_API_ bool GTEST_FLAG(name) = (default_val)
-# define GTEST_DEFINE_int32_(name, default_val, doc) \
+#define GTEST_DEFINE_int32_(name, default_val, doc) \
     GTEST_API_ ::testing::internal::Int32 GTEST_FLAG(name) = (default_val)
-# define GTEST_DEFINE_string_(name, default_val, doc) \
+#define GTEST_DEFINE_string_(name, default_val, doc) \
     GTEST_API_ ::std::string GTEST_FLAG(name) = (default_val)
 
 #endif  // !defined(GTEST_DECLARE_bool_)
@@ -2675,10 +2649,10 @@ bool ParseInt32(const Message& src_text, const char* str, Int32* value);
 // corresponding to the given Google Test flag.
 bool BoolFromGTestEnv(const char* flag, bool default_val);
 GTEST_API_ Int32 Int32FromGTestEnv(const char* flag, Int32 default_val);
-std::string OutputFlagAlsoCheckEnvVar();
-const char* StringFromGTestEnv(const char* flag, const char* default_val);
+std::string StringFromGTestEnv(const char* flag, const char* default_val);
 
 }  // namespace internal
+
 }  // namespace testing
 
 #endif  // GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PORT_H_

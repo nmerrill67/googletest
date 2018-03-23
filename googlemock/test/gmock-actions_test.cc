@@ -107,11 +107,7 @@ TEST(BuiltInDefaultValueTest, IsZeroForNumericTypes) {
   EXPECT_EQ(0, BuiltInDefaultValue<signed wchar_t>::Get());
 #endif
 #if GMOCK_WCHAR_T_IS_NATIVE_
-#if !defined(__WCHAR_UNSIGNED__)
   EXPECT_EQ(0, BuiltInDefaultValue<wchar_t>::Get());
-#else
-  EXPECT_EQ(0U, BuiltInDefaultValue<wchar_t>::Get());
-#endif
 #endif
   EXPECT_EQ(0U, BuiltInDefaultValue<unsigned short>::Get());  // NOLINT
   EXPECT_EQ(0, BuiltInDefaultValue<signed short>::Get());  // NOLINT
@@ -218,7 +214,7 @@ class MyNonDefaultConstructible {
   int value_;
 };
 
-#if GTEST_LANG_CXX11
+#if GTEST_HAS_STD_TYPE_TRAITS_
 
 TEST(BuiltInDefaultValueTest, ExistsForDefaultConstructibleType) {
   EXPECT_TRUE(BuiltInDefaultValue<MyDefaultConstructible>::Exists());
@@ -228,7 +224,7 @@ TEST(BuiltInDefaultValueTest, IsDefaultConstructedForDefaultConstructibleType) {
   EXPECT_EQ(42, BuiltInDefaultValue<MyDefaultConstructible>::Get().value());
 }
 
-#endif  // GTEST_LANG_CXX11
+#endif  // GTEST_HAS_STD_TYPE_TRAITS_
 
 TEST(BuiltInDefaultValueTest, DoesNotExistForNonDefaultConstructibleType) {
   EXPECT_FALSE(BuiltInDefaultValue<MyNonDefaultConstructible>::Exists());

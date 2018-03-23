@@ -46,10 +46,9 @@
 #include "gmock/internal/gmock-internal-utils.h"
 #include "gmock/internal/gmock-port.h"
 
-#if GTEST_LANG_CXX11  // Defined by gtest-port.h via gmock-port.h.
-#include <functional>
+#if GTEST_HAS_STD_TYPE_TRAITS_  // Defined by gtest-port.h via gmock-port.h.
 #include <type_traits>
-#endif  // GTEST_LANG_CXX11
+#endif
 
 namespace testing {
 
@@ -97,7 +96,7 @@ struct BuiltInDefaultValueGetter<T, false> {
 template <typename T>
 class BuiltInDefaultValue {
  public:
-#if GTEST_LANG_CXX11
+#if GTEST_HAS_STD_TYPE_TRAITS_
   // This function returns true iff type T has a built-in default value.
   static bool Exists() {
     return ::std::is_default_constructible<T>::value;
@@ -108,7 +107,7 @@ class BuiltInDefaultValue {
         T, ::std::is_default_constructible<T>::value>::Get();
   }
 
-#else  // GTEST_LANG_CXX11
+#else  // GTEST_HAS_STD_TYPE_TRAITS_
   // This function returns true iff type T has a built-in default value.
   static bool Exists() {
     return false;
@@ -118,7 +117,7 @@ class BuiltInDefaultValue {
     return BuiltInDefaultValueGetter<T, false>::Get();
   }
 
-#endif  // GTEST_LANG_CXX11
+#endif  // GTEST_HAS_STD_TYPE_TRAITS_
 };
 
 // This partial specialization says that we use the same built-in
